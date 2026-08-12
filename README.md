@@ -1,4 +1,4 @@
-# poke-ballers
+# Poké-Ballers
 
 Matches each NBA player to the Pokémon whose base stats are most
 statistically similar to theirs. NBA career stats are normalized into the
