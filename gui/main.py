@@ -3,7 +3,7 @@ import sys
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QPushButton, QLabel, QMessageBox, QStackedWidget,
+    QPushButton, QLabel, QMessageBox, QStackedWidget, QSizePolicy,
 )
 
 from nba_entry import NbaEntryPage
@@ -40,12 +40,15 @@ class HomePage(QWidget):
         exit_btn.clicked.connect(QApplication.quit)
         exit_row.addWidget(exit_btn)
 
+        for btn in [nba_to_pokemon_btn, pokemon_to_nba_btn, info_btn, exit_btn]:
+            btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
         layout = QVBoxLayout()
         layout.addWidget(title)
         layout.addWidget(subtitle)
-        layout.addLayout(mode_row)
-        layout.addLayout(info_row)
-        layout.addLayout(exit_row)
+        layout.addLayout(mode_row, 1)
+        layout.addLayout(info_row, 1)
+        layout.addLayout(exit_row, 1)
         self.setLayout(layout)
 
     def placeholder(self):
