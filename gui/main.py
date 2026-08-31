@@ -7,11 +7,12 @@ from PySide6.QtWidgets import (
 )
 
 from nba_entry import NbaEntryPage
+from pokemon_entry import PokemonEntryPage
 from output_page import OutputPage
 
 
 class HomePage(QWidget):
-    def __init__(self, on_nba_to_pokemon):
+    def __init__(self, on_nba_to_pokemon, on_pokemon_to_nba):
         super().__init__()
 
         title = QLabel("Poké-Ballers")
@@ -26,7 +27,7 @@ class HomePage(QWidget):
         nba_to_pokemon_btn = QPushButton("NBA Player → Pokemon")
         pokemon_to_nba_btn = QPushButton("Pokemon → NBA Player")
         nba_to_pokemon_btn.clicked.connect(on_nba_to_pokemon)
-        pokemon_to_nba_btn.clicked.connect(self.placeholder)
+        pokemon_to_nba_btn.clicked.connect(on_pokemon_to_nba)
         mode_row.addWidget(nba_to_pokemon_btn)
         mode_row.addWidget(pokemon_to_nba_btn)
 
@@ -62,12 +63,26 @@ class MainWindow(QMainWindow):
         self.resize(500, 400)
 
         self.stack = QStackedWidget()
-        self.home_page = HomePage(self.show_nba_entry)
-        self.nba_entry_page = NbaEntryPage(self.show_home, self.show_output)
-        self.output_page = OutputPage(self.show_nba_entry)
+        self.home_page = HomePage(self.show_nba_entry, self.show_pokemon_entry)
+        self.nba_entry_page = NbaEntryPage(self.show_home, self.show_nba_to_pokemon_output)
+        self.pokemon_entry_page = PokemonEntryPage(self.show_home, self.show_pokemon_to_nba_output)
+        self.nba_to_pokemon_output = OutputPage(
+            self.show_nba_entry,
+            matches_path="data/matches.csv", matches_key_col="PLAYER_NAME",
+            other_path="data/pokemon_normalized.csv", other_key_col="DisplayName",
+            source_label="Player",
+        )
+        self.pokemon_to_nba_output = OutputPage(
+            self.show_pokemon_entry,
+            matches_path="data/pokemon_matches.csv", matches_key_col="DisplayName",
+            other_path="data/nba_career_stats.csv", other_key_col="PLAYER_NAME",
+            source_label="Pokemon",
+        )
         self.stack.addWidget(self.home_page)
         self.stack.addWidget(self.nba_entry_page)
-        self.stack.addWidget(self.output_page)
+        self.stack.addWidget(self.pokemon_entry_page)
+        self.stack.addWidget(self.nba_to_pokemon_output)
+        self.stack.addWidget(self.pokemon_to_nba_output)
 
         self.setCentralWidget(self.stack)
 
@@ -77,9 +92,16 @@ class MainWindow(QMainWindow):
     def show_nba_entry(self):
         self.stack.setCurrentWidget(self.nba_entry_page)
 
-    def show_output(self, player_name):
-        self.output_page.show_player(player_name)
-        self.stack.setCurrentWidget(self.output_page)
+    def show_pokemon_entry(self):
+        self.stack.setCurrentWidget(self.pokemon_entry_page)
+
+    def show_nba_to_pokemon_output(self, player_name):
+        self.nba_to_pokemon_output.show_entity(player_name)
+        self.stack.setCurrentWidget(self.nba_to_pokemon_output)
+
+    def show_pokemon_to_nba_output(self, pokemon_name):
+        self.pokemon_to_nba_output.show_entity(pokemon_name)
+        self.stack.setCurrentWidget(self.pokemon_to_nba_output)
 
 
 def main():

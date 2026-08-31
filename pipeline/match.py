@@ -45,6 +45,27 @@ def main():
     agree_rate = (result["EUCLIDEAN_MATCH"] == result["COSINE_MATCH"]).mean()
     print(f"\nEuclidean and cosine agree on {agree_rate:.1%} of players")
 
+    # Reverse direction: nearest player for each Pokemon. Not the inverse of
+    # the above, since nearest-neighbor isn't symmetric - reuses the same
+    # distance/similarity matrices, just argmin/argmax along the other axis.
+    reverse_euclidean_idx = euclidean_dist.argmin(axis=0)
+    reverse_cosine_idx = cosine_sim.argmax(axis=0)
+
+    pokemon["EUCLIDEAN_MATCH"] = players["PLAYER_NAME"].to_numpy()[reverse_euclidean_idx]
+    pokemon["EUCLIDEAN_DIST"] = euclidean_dist[reverse_euclidean_idx, np.arange(len(pokemon))]
+    pokemon["COSINE_MATCH"] = players["PLAYER_NAME"].to_numpy()[reverse_cosine_idx]
+    pokemon["COSINE_SIM"] = cosine_sim[reverse_cosine_idx, np.arange(len(pokemon))]
+
+    pokemon_result = pokemon[["DisplayName"] + STAT_COLS + [
+        "EUCLIDEAN_MATCH", "EUCLIDEAN_DIST", "COSINE_MATCH", "COSINE_SIM"
+    ]]
+    pokemon_result.to_csv("data/pokemon_matches.csv", index=False)
+    print("\nSaved data/pokemon_matches.csv")
+
+    sample_pokemon = pokemon_result[pokemon_result["EUCLIDEAN_MATCH"].isin(SAMPLE_PLAYERS)
+                                     | pokemon_result["COSINE_MATCH"].isin(SAMPLE_PLAYERS)]
+    print(sample_pokemon[["DisplayName", "EUCLIDEAN_MATCH", "EUCLIDEAN_DIST", "COSINE_MATCH", "COSINE_SIM"]].head(10).to_string())
+
 
 if __name__ == "__main__":
     main()

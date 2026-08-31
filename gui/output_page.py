@@ -6,18 +6,17 @@ from PySide6.QtWidgets import (
 
 from radar_chart import RadarChartWidget
 
-MATCHES_PATH = "data/matches.csv"
-POKEMON_PATH = "data/pokemon_normalized.csv"
-
 STAT_COLS = ["HP_PCT", "ATTACK_PCT", "DEFENSE_PCT", "SPATK_PCT", "SPDEF_PCT", "SPEED_PCT"]
 STAT_LABELS = ["HP", "Attack", "Defense", "Sp. Atk", "Sp. Def", "Speed"]
 
 
 class OutputPage(QWidget):
-    def __init__(self, on_back):
+    def __init__(self, on_back, matches_path, matches_key_col, other_path, other_key_col, source_label):
         super().__init__()
-        self.matches = pd.read_csv(MATCHES_PATH)
-        self.pokemon = pd.read_csv(POKEMON_PATH)
+        self.matches = pd.read_csv(matches_path)
+        self.other = pd.read_csv(other_path)
+        self.matches_key_col = matches_key_col
+        self.other_key_col = other_key_col
 
         self.header_label = QLabel()
         self.header_label.setStyleSheet("font-size: 18px; font-weight: bold;")
@@ -37,7 +36,7 @@ class OutputPage(QWidget):
 
         self.table = QTableWidget(len(STAT_LABELS), 4)
         self.table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.table.setHorizontalHeaderLabels(["Stat", "Player", "Euclidean Match", "Cosine Match"])
+        self.table.setHorizontalHeaderLabels(["Stat", source_label, "Euclidean Match", "Cosine Match"])
         self.table.verticalHeader().setVisible(False)
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         for row, label in enumerate(STAT_LABELS):
@@ -61,14 +60,14 @@ class OutputPage(QWidget):
         layout.addWidget(back_btn)
         self.setLayout(layout)
 
-    def show_player(self, player_name):
-        row = self.matches[self.matches["PLAYER_NAME"] == player_name].iloc[0]
+    def show_entity(self, name):
+        row = self.matches[self.matches[self.matches_key_col] == name].iloc[0]
         euclidean_name = row["EUCLIDEAN_MATCH"]
         cosine_name = row["COSINE_MATCH"]
-        euclidean_row = self.pokemon[self.pokemon["DisplayName"] == euclidean_name].iloc[0]
-        cosine_row = self.pokemon[self.pokemon["DisplayName"] == cosine_name].iloc[0]
+        euclidean_row = self.other[self.other[self.other_key_col] == euclidean_name].iloc[0]
+        cosine_row = self.other[self.other[self.other_key_col] == cosine_name].iloc[0]
 
-        self.header_label.setText(player_name)
+        self.header_label.setText(name)
         self.match_label.setText(
             f"Euclidean match: {euclidean_name} (distance {row['EUCLIDEAN_DIST']:.1f})   |   "
             f"Cosine match: {cosine_name} (similarity {row['COSINE_SIM']:.4f})"
@@ -80,12 +79,12 @@ class OutputPage(QWidget):
             self.table.setItem(r, 3, QTableWidgetItem(f"{cosine_row[col]:.1f}"))
 
         self.current_series = [
-            (player_name, [row[col] for col in STAT_COLS], "#4a90d9"),
+            (name, [row[col] for col in STAT_COLS], "#4a90d9"),
             (euclidean_name, [euclidean_row[col] for col in STAT_COLS], "#d94a4a"),
             (cosine_name, [cosine_row[col] for col in STAT_COLS], "#4ad97a"),
         ]
-        for checkbox, (name, _, _) in zip(self.series_checkboxes, self.current_series):
-            checkbox.setText(name)
+        for checkbox, (series_name, _, _) in zip(self.series_checkboxes, self.current_series):
+            checkbox.setText(series_name)
             checkbox.setChecked(True)
 
         self.update_chart()
